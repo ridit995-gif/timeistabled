@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Sam's Routine Checklist</title>
+  
+  <!-- Mobile App Features -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Routine Hub">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#080914">
+
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=DM+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      color: #f6f7ff;
+      font-family: "Space Grotesk", sans-serif;
+      background: #080914;
+      overscroll-behavior-y: none;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    /* Lock Screen Overlay */
+    .lock-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #080914;
+      padding: 20px;
+    }
+
+    .lock-card {
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+    }
+
+    .lock-input {
+      width: 100%;
+      padding: 16px;
+      margin: 18px 0 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.4);
+      outline: none;
+      font-size: 18px;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+
+    .lock-input:focus {
+      border-color: #7a55ff;
+      box-shadow: 0 0 14px rgba(122, 85, 255, 0.4);
+    }
+
+    .unlock-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      color: #080914;
+      background: #a5ffdf;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .unlock-btn:active {
+      transform: scale(0.98);
+      background: #7ffff0;
+    }
+
+    .error-msg {
+      color: #ff8888;
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* App Content */
+    .app {
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+      padding: calc(env(safe-area-inset-top) + 24px) max(16px, calc((100vw - 1120px) / 2)) calc(env(safe-area-inset-bottom) + 30px);
+      background:
+        radial-gradient(circle at 15% 20%, rgba(96, 65, 255, 0.24), transparent 28%),
+        radial-gradient(circle at 86% 76%, rgba(0, 220, 180, 0.15), transparent 26%),
+        #080914;
+    }
+
+    .glow {
+      position: fixed;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+    }
+
+    .glow-one {
+      top: -120px;
+      left: -100px;
+      background: #673eff;
+    }
+
+    .glow-two {
+      right: -80px;
+      bottom: -100px;
+      background: #00bb9f;
+    }
+
+    .hero {
+      position: relative;
+      z-index: 1;
+      max-width: 690px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow,
+    .label {
+      margin: 0 0 9px;
+      color: #9f9db7;
+      font-family: "DM Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 1.8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(34px, 8vw, 76px);
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .subtitle {
+      max-width: 580px;
+      color: #bbb9ce;
+      font-size: 15px;
+      line-height: 1.5;
+      margin-top: 10px;
+    }
+
+    .dashboard-grid,
+    .content-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .dashboard-grid {
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+
+    .content-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .card {
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 20px;
+      padding: 20px;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.12),
+        rgba(255, 255, 255, 0.035)
+      );
+      box-shadow:
+        12px 12px 28px rgba(0, 0, 0, 0.28),
+        inset 1px 1px 1px rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .card-top,
+    .section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .score {
+      display: grid;
+      width: 52px;
+      height: 52px;
+      place-items: center;
+      border: 1px solid rgba(146, 122, 255, 0.55);
+      border-radius: 16px;
+      color: #cfc5ff;
+      background: rgba(111, 83, 255, 0.17);
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .progress-track {
+      height: 10px;
+      overflow: hidden;
+      margin: 20px 0 12px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #7a55ff, #22dec5);
+      box-shadow: 0 0 18px #7a55ff;
+      transition: width 0.35s ease;
+      width: 0%;
+    }
+
+    .small-text {
+      margin: 0;
+      color: #aaa8c1;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .calendar-icon {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border-radius: 12px;
+      color: #0d1020;
+      background: #d1c7ff;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .reset-btn, .add-btn {
+      padding: 8px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      color: #bbb9ce;
+      background: rgba(255, 255, 255, 0.05);
+      font-family: "DM Mono", monospace;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .reset-btn:active {
+      background: rgba(255, 100, 100, 0.2);
+      color: #ff9999;
+    }
+
+    .add-btn {
+      color: #a5ffdf;
+      border-color: rgba(165, 255, 223, 0.3);
+      background: rgba(165, 255, 223, 0.08);
+      font-weight: 600;
+    }
+
+    .add-task-form {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .add-task-input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      color: #eeedfa;
+      background: rgba(0, 0, 0, 0.25);
+      outline: none;
+      font-size: 14px;
+    }
+
+    .add-task-input:focus {
+      border-color: #7a55ff;
+    }
+
+    .checklist {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .task-wrapper {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .task {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid transparent;
+      border-radius: 14px;
+      color: #eeedfa;
+      text-align: left;
+      cursor: pointer;
+      background: rgba(0, 0, 0, 0.2);
+      font-size: 15px;
+    }
+
+    .task:active {
+      background: rgba(165, 255, 223, 0.12);
+    }
+
+    .task.done {
+      color: #8e8da0;
+      text-decoration: line-through;
+    }
+
+    .delete-task-btn {
+      border: none;
+      background: rgba(255, 255, 255, 0.05);
+      color: #737087;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .delete-task-btn:active {
+      color: #ff9999;
+      background: rgba(255, 100, 100, 0.15);
+    }
+
+    .checkbox {
+      display: grid;
+      flex: 0 0 24px;
+      width: 24px;
+      height: 24px;
+      place-items: center;
+      border: 1px solid #737087;
+      border-radius: 8px;
+      color: #07120f;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .done .checkbox {
+      border-color: #a5ffdf;
+      background: #a5ffdf;
+    }
+
+    .days {
+      display: flex;
+      gap: 6px;
+      margin: 20px 0 16px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .day {
+      flex: 1;
+      min-width: 44px;
+      padding: 12px 4px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      color: #a6a3ba;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .day.active {
+      color: #090a14;
+      background: #d1c7ff;
+      box-shadow: 0 4px 16px rgba(165, 145, 255, 0.3);
+    }
+
+    .day-plan {
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .day-plan ol {
+      display: grid;
+      gap: 12px;
+      margin: 14px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .day-plan li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #d5d3e2;
+      font-size: 14px;
+    }
+
+    .day-plan li span {
+      color: #7e76ad;
+      font-family: "DM Mono", monospace;
+      font-size: 11px;
+    }
+
+    .busy-card {
+      position: relative;
+      z-index: 1;
+      margin-bottom: 24px;
+    }
+
+    .busy-content {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .big-number {
+      display: block;
+      margin-bottom: 6px;
+      color: #7663dd;
+      font-family: "DM Mono", monospace;
+      font-size: 12px;
+    }
+
+    .busy-content p {
+      margin: 6px 0 0;
+      color: #a9a7bf;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-grid,
+      .content-grid,
+      .busy-content {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Lock Screen Overlay -->
+  <div class="lock-screen" id="lockScreen">
+    <div class="card lock-card">
+      <p class="label">SECURITY</p>
+      <h2>Enter Password</h2>
+      <form onsubmit="checkPassword(event)">
+        <input type="password" id="passInput" class="lock-input" placeholder="••••••••" autofocus required />
+        <button type="submit" class="unlock-btn">Unlock Hub</button>
+      </form>
+      <div class="error-msg" id="errorMsg">Incorrect Password. Try again!</div>
+    </div>
+  </div>
+
+  <!-- App Content -->
+  <main class="app" id="appContent" style="display: none;">
+    <div class="glow glow-one"></div>
+    <div class="glow glow-two"></div>
+
+    <header class="hero">
+      <p class="eyebrow">YOUR ROUTINE HUB</p>
+      <h1>Level up your day.</h1>
+      <p class="subtitle">
+        School, chess, homework, guitar, football, exercise, and rest — all in one place.
+      </p>
+    </header>
+
+    <section class="dashboard-grid">
+      <div class="card progress-card">
+        <div class="card-top">
+          <div>
+            <p class="label" id="selectedDayTitle">PROGRESS FOR MONDAY</p>
+            <h2 id="progressText">0% complete</h2>
+          </div>
+          <div class="score" id="scoreText">0/0</div>
+        </div>
+
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <p class="small-text">
+          Small steps count. Finish the next thing, not everything at once.
+        </p>
+      </div>
+
+      <div class="card quote-card">
+        <p class="label">TODAY’S RULE</p>
+        <h2>Football academy counts as exercise.</h2>
+        <p class="small-text">
+          On busy Wednesday and Saturday, do short homework and protect your sleep.
+        </p>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="card checklist-card">
+        <div class="section-heading">
+          <div>
+            <p class="label">DAILY CHECKLIST</p>
+            <h2>Win the basics</h2>
+          </div>
+          <button type="button" class="reset-btn" onclick="RoutineApp.resetDayTasks()">
+            Reset
+          </button>
+        </div>
+
+        <form class="add-task-form" onsubmit="RoutineApp.addTask(event)">
+          <input type="text" id="newTaskInput" class="add-task-input" placeholder="+ Add custom task..." required />
+          <button type="submit" class="add-btn">Add</button>
+        </form>
+        
+        <div class="checklist" id="checklistContainer"></div>
+      </div>
+
+      <div class="card timetable-card">
+        <div class="section-heading">
+          <div>
+            <p class="label">WEEKLY TIMETABLE</p>
+            <h2>Your plan</h2>
+          </div>
+          <span class="calendar-icon" aria-hidden="true">◫</span>
+        </div>
+
+        <div class="days" id="daysContainer"></div>
+
+        <div class="day-plan">
+          <h3 id="planDayTitle">Monday</h3>
+          <ol id="planListContainer"></ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="card busy-card">
+      <p class="label">BUSY DAY PLAN — WED & SAT</p>
+      <div class="busy-content">
+        <div>
+          <span class="big-number">01</span>
+          <h3>Short homework</h3>
+          <p>Only 20–30 minutes. Focus on high priority tasks first.</p>
+        </div>
+        <div>
+          <span class="big-number">02</span>
+          <h3>Academy = workout</h3>
+          <p>No extra exercise needed after football academy.</p>
+        </div>
+        <div>
+          <span class="big-number">03</span>
+          <h3>Prep for tomorrow</h3>
+          <p>Pack your bag and set out clothes before sleep.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const APP_PASSWORD = "SAMPRO";
+
+    function checkPassword(event) {
+      event.preventDefault();
+      const input = document.getElementById("passInput").value.trim();
+      const errorMsg = document.getElementById("errorMsg");
+      
+      if (input.toUpperCase() === APP_PASSWORD) {
+        document.getElementById("lockScreen").style.display = "none";
+        document.getElementById("appContent").style.display = "block";
+        RoutineApp.init();
+      } else {
+        errorMsg.style.display = "block";
+        document.getElementById("passInput").value = "";
+      }
+    }
+
+    const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    
+    const timetable = [
+      { day: "Monday", plan: ["School", "Chess", "Guitar practice", "Homework", "Exercise", "Dinner + Sleep"] },
+      { day: "Tuesday", plan: ["School", "Chess", "Guitar practice", "Homework", "Exercise", "Dinner + Sleep"] },
+      { day: "Wednesday", plan: ["School", "Chess", "Short homework", "Football academy", "Tuition", "Dinner + Sleep"] },
+      { day: "Thursday", plan: ["School", "Chess", "Guitar practice", "Homework", "Exercise", "Dinner + Sleep"] },
+      { day: "Friday", plan: ["School", "Chess", "Guitar practice", "Homework", "Exercise", "Dinner + Sleep"] },
+      { day: "Saturday", plan: ["School / Study", "Chess", "Short homework", "Football academy", "Tuition", "Dinner + Sleep"] },
+      { day: "Sunday", plan: ["Rest", "Chess practice", "Guitar session", "Homework catch-up", "Exercise", "Prepare school bag"] }
+    ];
+
+    const defaultChecklist = [
+      "Got ready for school",
+      "Went to school / studied",
+      "Played chess",
+      "Practiced guitar 🎸",
+      "Played football / Exercised ⚽",
+      "Finished homework",
+      "Ate dinner",
+      "Packed school bag",
+      "Slept on time"
+    ];
+
+    const RoutineApp = {
+      STORAGE_KEY_TASKS: "sam-routine-tasks-list",
+      STORAGE_KEY_DONE: "sam-routine-done-by-day",
+      state: {
+        selectedDay: DAYS[new Date().getDay()],
+        tasks: [],
+        doneByDay: {}
+      },
+
+      init() {
+        const savedTasks = localStorage.getItem(this.STORAGE_KEY_TASKS);
+        if (savedTasks) {
+          try {
+            this.state.tasks = JSON.parse(savedTasks);
+          } catch (e) {
+            this.state.tasks = [...defaultChecklist];
+          }
+        } else {
+          this.state.tasks = [...defaultChecklist];
+        }
+
+        const savedDone = localStorage.getItem(this.STORAGE_KEY_DONE);
+        if (savedDone) {
+          try {
+            this.state.doneByDay = JSON.parse(savedDone);
+          } catch (e) {
+            console.error("Failed to parse saved routine data", e);
+          }
+        }
+
+        this.renderAll();
+      },
+
+      save() {
+        localStorage.setItem(this.STORAGE_KEY_TASKS, JSON.stringify(this.state.tasks));
+        localStorage.setItem(this.STORAGE_KEY_DONE, JSON.stringify(this.state.doneByDay));
+      },
+
+      selectDay(dayName) {
+        this.state.selectedDay = dayName;
+        this.renderAll();
+      },
+
+      addTask(event) {
+        event.preventDefault();
+        const input = document.getElementById('newTaskInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        if (!this.state.tasks.includes(text)) {
+          this.state.tasks.push(text);
+          this.save();
+          this.renderAll();
+        }
+        input.value = '';
+      },
+
+      deleteTask(taskToDelete) {
+        this.state.tasks = this.state.tasks.filter(task => task !== taskToDelete);
+        this.save();
+        this.renderAll();
+      },
+
+      toggleTask(task) {
+        if (!this.state.doneByDay[this.state.selectedDay]) {
+          this.state.doneByDay[this.state.selectedDay] = {};
+        }
+        const currentStatus = this.state.doneByDay[this.state.selectedDay][task];
+        this.state.doneByDay[this.state.selectedDay][task] = !currentStatus;
+        
+        this.save();
+        this.renderProgress();
+        this.renderChecklist();
+      },
+
+      resetDayTasks() {
+        this.state.doneByDay[this.state.selectedDay] = {};
+        this.save();
+        this.renderProgress();
+        this.renderChecklist();
+      },
+
+      renderAll() {
+        this.renderTimetable();
+        this.renderProgress();
+        this.renderChecklist();
+      },
+
+      renderProgress() {
+        const activeDayDone = this.state.doneByDay[this.state.selectedDay] || {};
+        const completedCount = this.state.tasks.filter(task => activeDayDone[task]).length;
+        const total = this.state.tasks.length;
+        const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+
+        document.getElementById('selectedDayTitle').textContent = `PROGRESS FOR ${this.state.selectedDay.toUpperCase()}`;
+        document.getElementById('progressText').textContent = `${progress}% complete`;
+        document.getElementById('scoreText').textContent = `${completedCount}/${total}`;
+        document.getElementById('progressFill').style.width = `${progress}%`;
+      },
+
+      renderChecklist() {
+        const container = document.getElementById('checklistContainer');
+        const activeDayDone = this.state.doneByDay[this.state.selectedDay] || {};
+
+        if (this.state.tasks.length === 0) {
+          container.innerHTML = `<p class="small-text" style="text-align:center; padding: 12px 0;">No tasks added yet.</p>`;
+          return;
+        }
+
+        container.innerHTML = this.state.tasks.map(task => {
+          const isDone = !!activeDayDone[task];
+          const escapedTask = task.replace(/'/g, "\\'");
+          return `
+            <div class="task-wrapper">
+              <button type="button" class="task ${isDone ? 'done' : ''}" onclick="RoutineApp.toggleTask('${escapedTask}')">
+                <span class="checkbox">${isDone ? '✓' : ''}</span>
+                <span>${task}</span>
+              </button>
+              <button type="button" class="delete-task-btn" title="Delete task" onclick="RoutineApp.deleteTask('${escapedTask}')">✕</button>
+            </div>
+          `;
+        }).join('');
+      },
+
+      renderTimetable() {
+        const daysContainer = document.getElementById('daysContainer');
+        daysContainer.innerHTML = timetable.map(item => `
+          <button type="button" class="day ${this.state.selectedDay === item.day ? 'active' : ''}" onclick="RoutineApp.selectDay('${item.day}')">
+            ${item.day.slice(0, 3)}
+          </button>
+        `).join('');
+
+        const todayPlan = timetable.find(item => item.day === this.state.selectedDay) || timetable[0];
+        document.getElementById('planDayTitle').textContent = todayPlan.day;
+        
+        const planListContainer = document.getElementById('planListContainer');
+        planListContainer.innerHTML = todayPlan.plan.map((item, index) => `
+          <li>
+            <span>${String(index + 1).padStart(2, '0')}</span>
+            ${item}
+          </li>
+        `).join('');
+      }
+    };
+  </script>
+</body>
+</html>
